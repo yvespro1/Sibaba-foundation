@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard – Sibaba Foundation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #065f46;
+      --primary-light: #ecfdf5;
+      --primary-border: #a7f3d0;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --warning: #d97706;
+      --info: #2563eb;
+      --purple: #7c3aed;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --header-h: 64px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Auth Loading Screen ── */
+    #authLoading {
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+      display: grid; place-items: center; z-index: 9999;
+    }
+    #authLoading .logo { height: 65px; margin-bottom: 28px; display: block; margin-inline: auto; }
+    #authLoading p { color: rgba(255,255,255,0.55); font-size: 0.9rem; margin-top: 14px; text-align: center; }
+    .spin { font-size: 2rem; color: #10b981; display: block; text-align: center; }
+
+    /* ── Top Header ── */
+    .admin-header {
+      position: sticky; top: 0; z-index: 100;
+      height: var(--header-h);
+      background: linear-gradient(90deg, #0f172a 0%, #064e3b 100%);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+      display: flex; align-items: center;
+    }
+    .admin-header-inner {
+      max-width: 1280px; width: 100%; margin: 0 auto;
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .admin-brand { display: flex; align-items: center; gap: 14px; }
+    .admin-brand img { height: 38px; object-fit: contain; }
+    .admin-brand-text { line-height: 1.2; }
+    .admin-brand-text .title { font-size: 1rem; font-weight: 700; color: #fff; }
+    .admin-brand-text .user-email { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+    .admin-header-actions { display: flex; align-items: center; gap: 10px; }
+    .btn-view-site {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 8px;
+      font-size: 0.8rem; font-weight: 600;
+      color: rgba(255,255,255,0.75);
+      border: 1px solid rgba(255,255,255,0.2);
+      background: transparent;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-view-site:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .btn-signout {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 8px;
+      font-size: 0.8rem; font-weight: 600;
+      color: #fff; background: rgba(220,38,38,0.2);
+      border: 1px solid rgba(220,38,38,0.4);
+      cursor: pointer; font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn-signout:hover { background: rgba(220,38,38,0.4); }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    .stats-inner {
+      max-width: 1280px; margin: 0 auto;
+      display: flex; gap: 0; overflow-x: auto;
+    }
+    .stat-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 24px; border-right: 1px solid var(--border);
+      min-width: 130px; flex-shrink: 0;
+    }
+    .stat-card:last-child { border-right: none; }
+    .stat-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: grid; place-items: center; font-size: 1rem; flex-shrink: 0;
+    }
+    .stat-info .num { font-size: 1.4rem; font-weight: 800; line-height: 1; }
+    .stat-info small { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .ic-total    { background: #f0fdf4; color: #16a34a; }
+    .ic-health   { background: #fef2f2; color: #dc2626; }
+    .ic-updates  { background: #eff6ff; color: #2563eb; }
+    .ic-opps     { background: #fffbeb; color: #d97706; }
+    .ic-youth    { background: #f5f3ff; color: #7c3aed; }
+
+    /* ── Main Content ── */
+    .admin-main {
+      max-width: 1280px; margin: 0 auto;
+      padding: 28px 24px 60px;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; gap: 4px;
+      background: #fff;
+      padding: 6px; border-radius: 14px;
+      border: 1px solid var(--border);
+      width: fit-content; margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .tab-btn {
+      padding: 10px 22px; border-radius: 10px; border: none;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer;
+      color: var(--text-muted); background: transparent;
+      display: flex; align-items: center; gap: 8px;
+      transition: all 0.2s; font-family: inherit;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--bg); }
+    .tab-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(6,95,70,0.3); }
+    .badge {
+      background: rgba(255,255,255,0.25);
+      padding: 1px 8px; border-radius: 20px;
+      font-size: 0.72rem; font-weight: 700;
+    }
+    .tab-btn:not(.active) .badge { background: #e2e8f0; color: var(--text-muted); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card); border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      flex-wrap: wrap;
+    }
+    .card-header h2 {
+      font-size: 1.05rem; font-weight: 700;
+      display: flex; align-items: center; gap: 10px; color: var(--text);
+    }
+    .card-header h2 i { color: var(--primary); }
+    .card-body { padding: 28px; }
+
+    /* ── Post Form ── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label {
+      font-size: 0.8rem; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .required { color: var(--danger); }
+    .optional { color: var(--text-muted); font-weight: 400; text-transform: none; font-size: 0.78rem; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 11px 14px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 0.92rem; color: var(--text);
+      background: #f8fafc; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      font-family: inherit; width: 100%;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(6,95,70,0.1);
+      background: #fff;
+    }
+    .form-group textarea { resize: vertical; min-height: 180px; }
+    .char-count { font-size: 0.75rem; color: var(--text-muted); text-align: right; }
+
+    .img-preview-box {
+      display: none; margin-top: 10px;
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid var(--border); position: relative;
+    }
+    .img-preview-box img { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+    .img-preview-box .clear-img {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(0,0,0,0.6); color: #fff;
+      border: none; border-radius: 50%; width: 28px; height: 28px;
+      cursor: pointer; font-size: 0.75rem; display: grid; place-items: center;
+    }
+
+    .form-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: 10px;
+      background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+      color: #fff; border: none; cursor: pointer;
+      font-size: 0.92rem; font-weight: 700; font-family: inherit;
+      box-shadow: 0 4px 12px rgba(6,95,70,0.3);
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px; border-radius: 10px;
+      background: var(--bg); color: var(--text-muted);
+      border: 1px solid var(--border); cursor: pointer;
+      font-size: 0.88rem; font-weight: 600; font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn-ghost:hover { background: #e2e8f0; color: var(--text); }
+
+    .form-msg {
+      margin-top: 16px; padding: 12px 16px; border-radius: 10px;
+      font-size: 0.87rem; font-weight: 500; display: none;
+    }
+    .form-msg.success { display: block; background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .form-msg.error   { display: block; background: var(--danger-light); color: var(--danger); border: 1px solid #fecaca; }
+
+    /* ── Search ── */
+    .search-wrap { position: relative; }
+    .search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem; }
+    .search-wrap input {
+      padding: 9px 14px 9px 36px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 0.88rem; outline: none;
+      background: var(--bg); font-family: inherit; color: var(--text);
+      transition: border-color 0.2s, background 0.2s; width: 240px;
+    }
+    .search-wrap input:focus { border-color: var(--primary); background: #fff; }
+
+    /* ── Admin Posts List ── */
+    .posts-table { width: 100%; }
+    .post-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 16px; align-items: center;
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .post-row:last-child { border-bottom: none; }
+    .post-row:hover { background: #f8fafc; }
+    .post-thumb {
+      width: 72px; height: 52px; border-radius: 8px;
+      object-fit: cover; border: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .post-thumb-placeholder {
+      width: 72px; height: 52px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      display: grid; place-items: center; color: #cbd5e1; font-size: 1.2rem;
+    }
+    .post-info { min-width: 0; }
+    .post-meta-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
+    .cat-chip {
+      padding: 2px 10px; border-radius: 20px;
+      font-size: 0.7rem; font-weight: 700; text-transform: capitalize;
+    }
+    .cat-health       { background: #fef2f2; color: #dc2626; }
+    .cat-updates      { background: #eff6ff; color: #2563eb; }
+    .cat-opportunities{ background: #fffbeb; color: #d97706; }
+    .cat-youth        { background: #f5f3ff; color: #7c3aed; }
+    .post-date-label { font-size: 0.72rem; color: var(--text-muted); }
+    .post-title-label { font-size: 0.95rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .post-preview-label { font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .post-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-edit-sm {
+      padding: 7px 14px; border-radius: 8px;
+      background: #eff6ff; color: #2563eb;
+      border: 1px solid #bfdbfe; cursor: pointer;
+      font-size: 0.8rem; font-weight: 600; font-family: inherit;
+      display: flex; align-items: center; gap: 5px; transition: all 0.2s;
+    }
+    .btn-edit-sm:hover { background: #dbeafe; }
+    .btn-del-sm {
+      padding: 7px 10px; border-radius: 8px;
+      background: var(--danger-light); color: var(--danger);
+      border: 1px solid #fecaca; cursor: pointer;
+      font-size: 0.8rem; font-family: inherit; transition: all 0.2s;
+    }
+    .btn-del-sm:hover { background: #fee2e2; }
+
+    .empty-state, .loading-state {
+      text-align: center; padding: 60px 24px;
+      color: var(--text-muted);
+    }
+    .empty-state i, .loading-state i { font-size: 2.5rem; margin-bottom: 12px; display: block; opacity: 0.4; }
+    .empty-state p, .loading-state p { font-size: 0.9rem; }
+
+    /* ── Delete Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      display: none; place-items: center; z-index: 1000; padding: 24px;
+    }
+    .modal-overlay.show { display: grid; }
+    .modal-card {
+      background: #fff; border-radius: 20px;
+      padding: 40px 36px; max-width: 380px; width: 100%; text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+    }
+    .modal-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--danger-light); color: var(--danger);
+      font-size: 1.5rem; display: grid; place-items: center; margin: 0 auto 20px;
+    }
+    .modal-card h3 { font-size: 1.3rem; font-weight: 800; margin-bottom: 8px; }
+    .modal-card p  { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 28px; }
+    .modal-actions { display: flex; gap: 12px; justify-content: center; }
+    .btn-cancel-modal {
+      padding: 10px 22px; border-radius: 10px;
+      background: var(--bg); color: var(--text);
+      border: 1px solid var(--border); cursor: pointer;
+      font-size: 0.9rem; font-weight: 600; font-family: inherit;
+    }
+    .btn-delete-confirm {
+      padding: 10px 22px; border-radius: 10px;
+      background: var(--danger); color: #fff;
+      border: none; cursor: pointer;
+      font-size: 0.9rem; font-weight: 700; font-family: inherit;
+      transition: opacity 0.2s;
+    }
+    .btn-delete-confirm:hover { opacity: 0.88; }
+
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .admin-header-inner { flex-wrap: wrap; gap: 10px; }
+      .stats-bar .stats-inner { gap: 0; }
+      .stat-card { padding: 12px 16px; min-width: 100px; }
+      .post-row { grid-template-columns: 1fr auto; }
+      .post-thumb, .post-thumb-placeholder { display: none; }
+      .search-wrap input { width: 180px; }
+      .admin-main { padding: 20px 16px 40px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Auth Loading -->
+  <div id="authLoading">
+    <div>
+      <img src="images/SIBABA FOUNDATION LOGO@5x.png" class="logo" alt="Sibaba Foundation" />
+      <i class="fas fa-spinner fa-spin spin"></i>
+      <p>Verifying access…</p>
+    </div>
+  </div>
+
+  <!-- Dashboard (shown after auth) -->
+  <div id="dashboardApp" style="display:none;">
+
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="admin-header-inner">
+        <div class="admin-brand">
+          <img src="images/SIBABA FOUNDATION LOGO@5x.png" alt="Logo" />
+          <div class="admin-brand-text">
+            <div class="title">Admin Dashboard</div>
+            <div class="user-email" id="adminEmail"></div>
+          </div>
+        </div>
+        <div class="admin-header-actions">
+          <a href="index.html" target="_blank" class="btn-view-site">
+            <i class="fas fa-external-link-alt"></i> View Site
+          </a>
+          <button id="signOutBtn" class="btn-signout">
+            <i class="fas fa-sign-out-alt"></i> Sign Out
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stats-inner">
+        <div class="stat-card">
+          <div class="stat-icon ic-total"><i class="fas fa-file-alt"></i></div>
+          <div class="stat-info"><div class="num" id="statTotal">–</div><small>Total</small></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon ic-health"><i class="fas fa-heartbeat"></i></div>
+          <div class="stat-info"><div class="num" id="statHealth">–</div><small>Health</small></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon ic-updates"><i class="fas fa-bell"></i></div>
+          <div class="stat-info"><div class="num" id="statUpdates">–</div><small>Updates</small></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon ic-opps"><i class="fas fa-star"></i></div>
+          <div class="stat-info"><div class="num" id="statOpps">–</div><small>Opps</small></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon ic-youth"><i class="fas fa-graduation-cap"></i></div>
+          <div class="stat-info"><div class="num" id="statYouth">–</div><small>Youth</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <main class="admin-main">
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="new" id="tabNew">
+          <i class="fas fa-plus-circle"></i> New Post
+        </button>
+        <button class="tab-btn" data-tab="all" id="tabAll">
+          <i class="fas fa-list-ul"></i> All Posts
+          <span class="badge" id="postsCount">0</span>
+        </button>
+      </div>
+
+      <!-- NEW POST PANEL -->
+      <div class="tab-panel active card" id="panelNew">
+        <div class="card-header">
+          <h2 id="formHeading"><i class="fas fa-pen-nib"></i> Create New Post</h2>
+          <button class="btn-ghost" id="cancelEditBtn" style="display:none;">
+            <i class="fas fa-times"></i> Cancel Edit
+          </button>
+        </div>
+        <div class="card-body">
+          <form id="postForm">
+            <input type="hidden" id="editDocId" />
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="postTitle">Title <span class="required">*</span></label>
+                <input type="text" id="postTitle" placeholder="Post title…" required />
+              </div>
+              <div class="form-group">
+                <label for="postCategory">Category <span class="required">*</span></label>
+                <select id="postCategory" required>
+                  <option value="">Select a category…</option>
+                  <option value="health">🩺 Health</option>
+                  <option value="updates">📢 Updates</option>
+                  <option value="opportunities">⭐ Opportunities</option>
+                  <option value="youth">🎓 Youth</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label for="postContent">Content <span class="required">*</span></label>
+                <textarea id="postContent" placeholder="Write your post content here…" required></textarea>
+                <div class="char-count"><span id="charCount">0</span> characters</div>
+              </div>
+              <div class="form-group full">
+                <label for="postImage">Cover Image URL <span class="optional">(optional)</span></label>
+                <input type="url" id="postImage" placeholder="https://example.com/photo.jpg" />
+                <div class="img-preview-box" id="imgPreviewBox">
+                  <img id="previewImg" src="" alt="Preview" />
+                  <button type="button" class="clear-img" id="clearImgBtn"><i class="fas fa-times"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" id="submitBtn">
+                <i class="fas fa-paper-plane"></i> <span id="submitBtnText">Publish Post</span>
+              </button>
+            </div>
+            <div class="form-msg" id="formMsg"></div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ALL POSTS PANEL -->
+      <div class="tab-panel card" id="panelAll">
+        <div class="card-header">
+          <h2><i class="fas fa-newspaper"></i> Published Posts</h2>
+          <div class="search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" id="adminSearch" placeholder="Search posts…" />
+          </div>
+        </div>
+        <div id="adminPostsList">
+          <div class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading posts…</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div><!-- /dashboardApp -->
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal-card">
+      <div class="modal-icon"><i class="fas fa-trash-alt"></i></div>
+      <h3>Delete Post?</h3>
+      <p>This will permanently delete the post. This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn-cancel-modal" id="cancelDeleteBtn">Cancel</button>
+        <button class="btn-delete-confirm" id="confirmDeleteBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { signOut, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+    import {
+      collection, addDoc, getDocs, updateDoc, deleteDoc,
+      doc, query, orderBy, onSnapshot, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+
+    const authLoading  = document.getElementById('authLoading');
+    const dashboardApp = document.getElementById('dashboardApp');
+    const adminEmail   = document.getElementById('adminEmail');
+
+    // ── Auth Guard ──────────────────────────────────────────
+    onAuthStateChanged(auth, user => {
+      if (!user) { window.location.href = 'login.html'; return; }
+      authLoading.style.display = 'none';
+      dashboardApp.style.display = 'block';
+      adminEmail.textContent = user.email;
+      initDashboard();
+    });
+
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      await signOut(auth);
+      window.location.href = 'login.html';
+    });
+
+    // ── Tabs ──────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel' + (btn.dataset.tab === 'new' ? 'New' : 'All')).classList.add('active');
+      });
+    });
+
+    // ── State ─────────────────────────────────────────────
+    let allPosts = [];
+    let pendingDeleteId = null;
+
+    // ── Init Dashboard ─────────────────────────────────────
+    function initDashboard() {
+      // Real-time listener
+      const q = query(collection(db, 'posts'), orderBy('date', 'desc'));
+      onSnapshot(q, snap => {
+        allPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        updateStats();
+        renderList();
+        document.getElementById('postsCount').textContent = allPosts.length;
+      }, err => {
+        document.getElementById('adminPostsList').innerHTML =
+          `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Failed to load posts.<br><small>${err.message}</small></p></div>`;
+      });
+    }
+
+    // ── Stats ──────────────────────────────────────────────
+    function updateStats() {
+      document.getElementById('statTotal').textContent   = allPosts.length;
+      document.getElementById('statHealth').textContent  = allPosts.filter(p => p.category === 'health').length;
+      document.getElementById('statUpdates').textContent = allPosts.filter(p => p.category === 'updates').length;
+      document.getElementById('statOpps').textContent    = allPosts.filter(p => p.category === 'opportunities').length;
+      document.getElementById('statYouth').textContent   = allPosts.filter(p => p.category === 'youth').length;
+    }
+
+    // ── Render Post List ────────────────────────────────────
+    function renderList(filter = '') {
+      const container = document.getElementById('adminPostsList');
+      let posts = allPosts;
+      if (filter) {
+        const f = filter.toLowerCase();
+        posts = posts.filter(p =>
+          p.title.toLowerCase().includes(f) ||
+          (p.content || '').toLowerCase().includes(f) ||
+          (p.category || '').includes(f)
+        );
+      }
+      if (posts.length === 0) {
+        container.innerHTML = `<div class="empty-state">
+          <i class="fas fa-newspaper"></i>
+          <p>${filter ? 'No posts match your search.' : 'No posts yet. Create your first post!'}</p>
+        </div>`;
+        return;
+      }
+      const catIcons = { health:'fa-heartbeat', updates:'fa-bell', opportunities:'fa-star', youth:'fa-graduation-cap' };
+      container.innerHTML = `<div class="posts-table">${posts.map(p => `
+        <div class="post-row">
+          ${p.imageUrl
+            ? `<img class="post-thumb" src="${esc(p.imageUrl)}" alt="" loading="lazy">`
+            : `<div class="post-thumb-placeholder"><i class="fas fa-image"></i></div>`}
+          <div class="post-info">
+            <div class="post-meta-row">
+              <span class="cat-chip cat-${p.category}">
+                <i class="fas ${catIcons[p.category]||'fa-file'}"></i> ${p.category}
+              </span>
+              <span class="post-date-label"><i class="fas fa-calendar-alt"></i> ${fmtDate(p.date)}</span>
+            </div>
+            <div class="post-title-label">${esc(p.title)}</div>
+            <div class="post-preview-label">${esc((p.content||'').substring(0,100))}${p.content?.length>100?'…':''}</div>
+          </div>
+          <div class="post-actions">
+            <button class="btn-edit-sm" onclick="window.__editPost('${p.id}')">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn-del-sm" onclick="window.__deletePost('${p.id}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>`).join('')}
+      </div>`;
+    }
+
+    document.getElementById('adminSearch').addEventListener('input', e => renderList(e.target.value));
+
+    // ── Post Form ──────────────────────────────────────────
+    const postForm        = document.getElementById('postForm');
+    const submitBtn       = document.getElementById('submitBtn');
+    const submitBtnText   = document.getElementById('submitBtnText');
+    const formMsg         = document.getElementById('formMsg');
+    const postContent     = document.getElementById('postContent');
+    const charCountEl     = document.getElementById('charCount');
+    const postImageInput  = document.getElementById('postImage');
+    const imgPreviewBox   = document.getElementById('imgPreviewBox');
+    const previewImg      = document.getElementById('previewImg');
+    const cancelEditBtn   = document.getElementById('cancelEditBtn');
+    const formHeading     = document.getElementById('formHeading');
+    const editDocId       = document.getElementById('editDocId');
+
+    postContent.addEventListener('input', () => {
+      charCountEl.textContent = postContent.value.length;
+    });
+
+    postImageInput.addEventListener('input', () => {
+      const val = postImageInput.value.trim();
+      if (val) { previewImg.src = val; imgPreviewBox.style.display = 'block'; }
+      else       { imgPreviewBox.style.display = 'none'; }
+    });
+    document.getElementById('clearImgBtn').addEventListener('click', () => {
+      postImageInput.value = ''; imgPreviewBox.style.display = 'none';
+    });
+
+    postForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtnText.textContent = 'Publishing…';
+      hideFormMsg();
+
+      const data = {
+        title:    document.getElementById('postTitle').value.trim(),
+        category: document.getElementById('postCategory').value,
+        content:  postContent.value.trim(),
+        imageUrl: postImageInput.value.trim(),
+      };
+
+      try {
+        const docId = editDocId.value;
+        if (docId) {
+          await updateDoc(doc(db, 'posts', docId), { ...data, updatedAt: serverTimestamp() });
+          showFormMsg('Post updated successfully! ✓', 'success');
+          resetEditMode();
+        } else {
+          data.date = serverTimestamp();
+          await addDoc(collection(db, 'posts'), data);
+          showFormMsg('Post published successfully! ✓', 'success');
+          postForm.reset();
+          charCountEl.textContent = '0';
+          imgPreviewBox.style.display = 'none';
+        }
+      } catch (err) {
+        showFormMsg('Error: ' + err.message, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtnText.textContent = editDocId.value ? 'Update Post' : 'Publish Post';
+      }
+    });
+
+    // ── Edit Post ──────────────────────────────────────────
+    window.__editPost = id => {
+      const post = allPosts.find(p => p.id === id);
+      if (!post) return;
+      document.getElementById('tabNew').click();
+      editDocId.value                                   = id;
+      document.getElementById('postTitle').value        = post.title;
+      document.getElementById('postCategory').value     = post.category;
+      postContent.value                                 = post.content || '';
+      postImageInput.value                              = post.imageUrl || '';
+      charCountEl.textContent                           = (post.content||'').length;
+      if (post.imageUrl) { previewImg.src = post.imageUrl; imgPreviewBox.style.display = 'block'; }
+      formHeading.innerHTML  = '<i class="fas fa-edit"></i> Editing Post';
+      cancelEditBtn.style.display = 'inline-flex';
+      submitBtnText.textContent   = 'Update Post';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    cancelEditBtn.addEventListener('click', () => {
+      postForm.reset(); charCountEl.textContent = '0';
+      imgPreviewBox.style.display = 'none'; hideFormMsg(); resetEditMode();
+    });
+
+    function resetEditMode() {
+      editDocId.value              = '';
+      formHeading.innerHTML        = '<i class="fas fa-pen-nib"></i> Create New Post';
+      cancelEditBtn.style.display  = 'none';
+      submitBtnText.textContent    = 'Publish Post';
+    }
+
+    // ── Delete Post ────────────────────────────────────────
+    window.__deletePost = id => {
+      pendingDeleteId = id;
+      document.getElementById('deleteModal').classList.add('show');
+    };
+    document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+      document.getElementById('deleteModal').classList.remove('show');
+      pendingDeleteId = null;
+    });
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+      if (!pendingDeleteId) return;
+      try {
+        await deleteDoc(doc(db, 'posts', pendingDeleteId));
+        document.getElementById('deleteModal').classList.remove('show');
+        pendingDeleteId = null;
+      } catch (err) {
+        alert('Delete failed: ' + err.message);
+      }
+    });
+
+    // ── Helpers ────────────────────────────────────────────
+    function fmtDate(ts) {
+      if (!ts) return '—';
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    function esc(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function showFormMsg(text, type) {
+      formMsg.textContent  = text;
+      formMsg.className    = 'form-msg ' + type;
+    }
+    function hideFormMsg() { formMsg.textContent = ''; formMsg.className = 'form-msg'; }
+  </script>
+</body>
+</html>

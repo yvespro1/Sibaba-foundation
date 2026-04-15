@@ -1,0 +1,8 @@
+- [x] Read current script.js to integrate image-config loader safely
+- [x] Create site-config.json with centralized image paths
+- [x] Update index.html image elements to use data-img-key attributes
+- [x] Update about.html image elements to use data-img-key attributes
+- [x] Update education-services.html image elements to use data-img-key attributes
+- [x] Update script.js to apply config image paths to matching data-img-key elements
+- [x] Create README-EDITING.md with simple folder/config workflow
+- [x] Run static validation checks for data-img-key and config references
